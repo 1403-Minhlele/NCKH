@@ -1,78 +1,46 @@
 --- PAGE 1 ---
- 
+
 Contents lists available at ScienceDirect
 Information and Software Technology
-journal homepage: www.elsevier.com/locate/infsof  
-COTVD: A function-level vulnerability detection framework using 
-chain-of-thought reasoning with large language models
-Yinan Chen a
- , Xiangping Chen c, Yuan Huang a,∗, Changlin Yang a, Lei Yun a,b
+journal homepage: www.elsevier.com/locate/infsof
+
+COTVD: A function-level vulnerability detection framework using chain-of-thought reasoning with large language models
+
+Yinan Chen a, Xiangping Chen c, Yuan Huang a,∗, Changlin Yang a, Lei Yun a,b
+
 a School of Software Engineering, Sun Yat-sen University, Zhuhai, Guangdong, China
-b Key Laboratory Ministry of Industry and Information Technology, China Electronic Product Reliability and Environment Testing Research 
-Institute, Guangzhou, Guangdong, China
+b Key Laboratory Ministry of Industry and Information Technology, China Electronic Product Reliability and Environment Testing Research Institute, Guangzhou, Guangdong, China
 c School of Journalism and Communication, Sun Yat-sen University, Guangzhou, Guangdong, China
-A R T I C L E  I N F O
-Dataset link: https://github.com/AFE23-u/CoT
-VD
-Keywords:
-Vulnerability detection
-Large language models
-Chain of thought
-Security risk analysis
- A B S T R A C T
-Context: With the growth of open-source vulnerability databases, deep learning methods have been widely 
-applied for vulnerability detection. However, most existing approaches focus on coarse-grained detection, 
-predicting only whether a sample contains a vulnerability without providing detailed explanations.
-Objective: This study aims to propose a large language model (LLM)-based method for function-level 
-vulnerability detection and analysis, providing detailed insights into detected vulnerabilities.
-Methods: We introduce CoTVD, which leverages the reasoning capabilities of LLMs through the Chain of 
-Thought (CoT) approach. An instructive prompt strategy was designed to guide the model in analyzing data 
-and control dependencies related to library function calls, enhancing detection flexibility and accuracy. CoTVD 
-was evaluated on multiple LLMs, including GPT-4o-128K, GPT-3.5-Turbo, Gemini-1.5-Pro, Claude-3.5-Sonnet, 
-Llama-3.1-405B, Qwen2-72B-Instruct-T, and DeepSeek-67B-T.
-Results: Experimental results show that CoTVD based on GPT-4o-128K outperforms other models, achieving 
-a recall rate of 94.77%. CoTVD, however, generates a relatively high number of false positives due to its 
-sensitivity to potential security risks, which include not only traditional vulnerabilities but also risks such 
-as information leakage. The study further refines existing dataset labels into finer granularity. In a human 
-evaluation with 10 experts on 200 samples, each participant identified, on average, 1.7 additional vulnerability 
-samples and 1.1 lines of risky code when assisted by CoTVD, demonstrating its effectiveness in real-world 
-scenarios.
-Conclusion: CoTVD enables function-level vulnerability detection with detailed analysis and proves effective 
-in identifying vulnerabilities and code risks in practice, offering a novel approach for vulnerability detection 
-and security analysis.
+
+A R T I C L E I N F O
+Dataset link: https://github.com/AFE23-u/CoTVD
+Keywords: Vulnerability detection; Large language models; Chain of thought; Security risk analysis
+
+A B S T R A C T
+
+Context: With the growth of open-source vulnerability databases, deep learning methods have been widely applied for vulnerability detection. However, most existing approaches focus on coarse-grained detection, predicting only whether a sample contains a vulnerability without providing detailed explanations.
+
+Objective: This study aims to propose a large language model (LLM)-based method for function-level vulnerability detection and analysis, providing detailed insights into detected vulnerabilities.
+
+Methods: We introduce CoTVD, which leverages the reasoning capabilities of LLMs through the Chain of Thought (CoT) approach. An instructive prompt strategy was designed to guide the model in analyzing data and control dependencies related to library function calls, enhancing detection flexibility and accuracy. CoTVD was evaluated on multiple LLMs, including GPT-4o-128K, GPT-3.5-Turbo, Gemini-1.5-Pro, Claude-3.5-Sonnet, Llama-3.1-405B, Qwen2-72B-Instruct-T, and DeepSeek-67B-T.
+
+Results: Experimental results show that CoTVD based on GPT-4o-128K outperforms other models, achieving a recall rate of 94.77%. CoTVD, however, generates a relatively high number of false positives due to its sensitivity to potential security risks, which include not only traditional vulnerabilities but also risks such as information leakage. The study further refines existing dataset labels into finer granularity. In a human evaluation with 10 experts on 200 samples, each participant identified, on average, 1.7 additional vulnerability samples and 1.1 lines of risky code when assisted by CoTVD, demonstrating its effectiveness in real-world scenarios.
+
+Conclusion: CoTVD enables function-level vulnerability detection with detailed analysis and proves effective in identifying vulnerabilities and code risks in practice, offering a novel approach for vulnerability detection and security analysis.
+
 1. Introduction
-Even experienced developers often make mistakes during software 
-development, resulting in software vulnerabilities [1–4]. These vulner-
-abilities pose serious software security and quality threats, potentially 
-resulting in system crashes, data leaks, or even major security incidents. 
-With the widespread use of open-source code and increased code reuse, 
-the spread of vulnerabilities has become even more severe, making ef-
-fective vulnerability detection and repair critical challenges in software 
-development and security [5].
-Current deep learning-based vulnerability detection methods [6–
-9] automatically learn vulnerability-related patterns from large-scale 
-datasets. These methods typically adopt sequence models (e.g., LSTM
-[10], Transformer [11]) or graph neural networks (GNNs) to represent 
-∗ Corresponding author.
-E-mail address: huangyuan5@mail.sysu.edu.cn (Y. Huang).
-code semantics, such as Devign [12] and ReVeal [13]. While these 
-approaches have demonstrated strong detection performance, their out-
-puts are usually limited to binary labels or line-level importance scores. 
-The resulting explanations are often post-hoc and descriptive, lacking 
-explicit reasoning about how vulnerabilities arise from the interaction 
-of data flow and control flow. Consequently, developers must manually 
-reconstruct the underlying causes of vulnerabilities, which significantly 
-increases the analysis burden and limits practical usability.
-Recent advances in large language models (LLMs), exemplified 
-by ChatGPT [14], offer new opportunities to address this limitation. 
-Unlike traditional deep learning models, LLMs possess inherent rea-
-soning capabilities and can generate coherent natural-language ex-
-planations when properly guided. Motivated by this observation, we
+
+Even experienced developers often make mistakes during software development, resulting in software vulnerabilities [1–4]. These vulnerabilities pose serious software security and quality threats, potentially resulting in system crashes, data leaks, or even major security incidents. With the widespread use of open-source code and increased code reuse, the spread of vulnerabilities has become even more severe, making effective vulnerability detection and repair critical challenges in software development and security [5].
+
+Current deep learning-based vulnerability detection methods [6–9] automatically learn vulnerability-related patterns from large-scale datasets. These methods typically adopt sequence models (e.g., LSTM [10], Transformer [11]) or graph neural networks (GNNs) to represent code semantics, such as Devign [12] and ReVeal [13]. While these approaches have demonstrated strong detection performance, their outputs are usually limited to binary labels or line-level importance scores. The resulting explanations are often post-hoc and descriptive, lacking explicit reasoning about how vulnerabilities arise from the interaction of data flow and control flow. Consequently, developers must manually reconstruct the underlying causes of vulnerabilities, which significantly increases the analysis burden and limits practical usability.
+
+Recent advances in large language models (LLMs), exemplified by ChatGPT [14], offer new opportunities to address this limitation. Unlike traditional deep learning models, LLMs possess inherent reasoning capabilities and can generate coherent natural-language explanations when properly guided. Motivated by this observation, we
+
 https://doi.org/10.1016/j.infsof.2026.108043
 Received 21 September 2025; Received in revised form 21 January 2026; Accepted 22 January 2026
-Information and Software Technology 193 (2026) 108043 
-Available online 3 February 2026 
-0950-5849/© 2026 Elsevier B.V. All rights are reserved, including those for text and data mining, AI training, and similar technologies. 
+Information and Software Technology 193 (2026) 108043
+Available online 3 February 2026
+0950-5849/© 2026 Elsevier B.V. All rights are reserved, including those for text and data mining, AI training, and similar technologies.
 
 --- PAGE 2 ---
 Y. Chen et al.
@@ -204,8 +172,7 @@ proaches such as VulDeePecker. Similarly, other studies investigate
 transfer learning strategies using Transformer-based models [32] such 
 as CodeBERT and CodeGPT, exploring fine-tuning, embedding extrac-
 tion, and hybrid training schemes to enhance vulnerability prediction 
-performance. These works highlight the effectiveness of pre-trained lan-
-guage models in capturing syntactic and semantic patterns associated 
+performance. These works highlight the effectiveness of pre-trained language models in capturing syntactic and semantic patterns associated 
 with vulnerable code.
 Despite their promising detection performance, most existing LLM- 
 or Transformer-based approaches primarily focus on improving classi-
