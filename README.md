@@ -2,6 +2,52 @@
 
 ## I. Kết Luận Ngắn Gọn Sau Khi Đọc Bài Báo PDF
 
+### Workflow tổng quan của repo CoTVD
+
+```text
+COTVD Research Workflow
+├── 1. Thu thập dữ liệu gốc
+│   ├── originData/Devign.json
+│   ├── originData/Reveal-vulnerables.json
+│   └── originData/Reveal-non-vulnerables.json
+│
+├── 2. Chuẩn hóa dữ liệu
+│   └── code/merge.py
+│       └── tạo ra data/cotvd.json
+│
+├── 3. Lọc sample có hàm nhạy cảm
+│   └── code/joern.py
+│       ├── target_list / dangerous function list
+│       └── chỉ giữ các function có security-sensitive call
+│
+├── 4. Trích dependency slice bằng Joern
+│   ├── code/joern.sc
+│   ├── code/output.py
+│   └── mỗi sample có field slice
+│
+├── 5. Chia dataset
+│   └── code/split.py
+│       ├── train.json
+│       ├── valid.json
+│       └── test.json
+│
+├── 6. Tạo prompt cho LLM
+│   ├── code/get_slice.py
+│   └── code/prompt.py
+│       └── source code + dependency slice + instruction -> prompt
+│
+├── 7. LLM phân tích và suy luận theo Chain-of-Thought
+│   └── Label: 0 / Label: 1
+│
+├── 8. Đánh giá hiệu năng
+│   ├── Precision, Recall, F1
+│   ├── so sánh với baseline Devign
+│   └── so sánh với baseline ReVeal / Vuld_SySe
+│
+└── 9. Kết luận nghiên cứu
+    └── CoTVD là pipeline reasoning với LLM, không phải repo train model end-to-end thuần túy
+```
+
 Sau khi đối chiếu với bài báo gốc, repo này không phải là một repo huấn luyện mô hình deep learning thuần túy; nó là một môi trường tái tạo pipeline của bài báo COTVD, tập trung vào:
 
 - trích xuất dependency slice bằng Joern,
@@ -328,6 +374,315 @@ Repo COTVD là một pipeline hoàn chỉnh cho phát hiện lỗ hổng mức f
 - Nên ghi rõ đường dẫn Joern, đường dẫn dữ liệu gốc và version torch trước khi chạy.
 - Nếu chạy trên Windows, ưu tiên WSL2 để ít lỗi với Joern và script Linux-like.
 
+## XVII. Hướng Dẫn Chạy Workflow Chi Tiết Từng Bước
+
+### Chuẩn Bị Môi Trường
+
+```bash
+# Vào thư mục COTVD
+cd /mnt/q/nckh/COTVD
+
+# Kiểm tra cấu trúc
+ls -la
+ls -la data/
+ls -la code/
+```
+
+### Bước 1: Hợp Nhất Dữ Liệu (Merge)
+
+**Mục đích:** Kết hợp Devign.json và Reveal-\*.json thành một tệp cotvd.json duy nhất với định dạng đồng nhất.
+
+```bash
+cd /mnt/q/nckh/COTVD
+python code/merge.py
+```
+
+**Output:** `data/cotvd.json`
+
+**Kiểm tra:**
+
+```bash
+ls -lh data/cotvd.json
+head data/cotvd.json | jq '.[0]'
+```
+
 ---
 
-Tệp này được viết lại để làm tài liệu phân tích repo COTVD, tập trung vào cấu trúc dữ liệu, luồng preprocessing và quy trình tái hiện training một cách rõ ràng, khoa học và dễ thực hiện.
+### Bước 2: Lọc Hàm Nhạy Cảm (Optional - Count)
+
+**Mục đích:** Thống kê hoặc lọc các sample chứa security-sensitive function calls từ dữ liệu gốc.
+
+```bash
+cd /mnt/q/nckh/COTVD
+python code/count.py
+```
+
+**Output:** Xuất các sample lọc được theo target functions.
+
+---
+
+### Bước 3: Trích Dependency Slice Bằng Joern
+
+**Mục đích:** Dùng Joern để xây dựng code property graph và trích data dependency + control dependency cho mỗi sample.
+
+**Yêu cầu:** Joern phải được cài đặt và ở trong PATH.
+
+```bash
+# Kiểm tra Joern
+which joern
+joern --version
+
+# Nếu chưa cài, cần cài trước
+# Ví dụ: apt-get install joern (trên Linux) hoặc tải từ https://github.com/joernio/joern
+```
+
+**Chạy trích slice:**
+
+```bash
+cd /mnt/q/nckh/COTVD
+python code/joern.py
+```
+
+**Output:**
+
+- `data/Devign_func.json` - được cập nhật thêm field `slice`
+- `data/log_location.txt` - ghi lại tiến độ
+- `data/output.txt` - output tạm từ Joern
+
+**Lưu ý:**
+
+- Script này có thể chạy rất lâu (tùy số lượng sample)
+- Nếu bị gián đoạn, có thể resume từ vị trí cuối (xem `log_location.txt`)
+
+---
+
+### Bước 4: Loại Bỏ Sample Không Hợp Lệ
+
+**Mục đích:** Xóa các sample không có slice hoặc slice rỗng.
+
+```bash
+cd /mnt/q/nckh/COTVD
+python code/rm_no_slice.py
+```
+
+**Output:** Cập nhật `data/Devign_func.json` (loại bỏ invalid samples)
+
+**Kiểm tra:**
+
+```bash
+cd /mnt/q/nckh/COTVD
+python -c "import json; data=json.load(open('data/Devign_func.json')); print(f'Remaining samples: {len(data)}')"
+```
+
+---
+
+### Bước 5: Chia Dataset Train/Valid/Test
+
+**Mục đích:** Chia cotvd.json theo tỉ lệ 8:1:1 (train:valid:test), giữ cân bằng label.
+
+```bash
+cd /mnt/q/nckh/COTVD
+python code/split.py
+```
+
+**Output:**
+
+- `data/train.json`
+- `data/valid.json`
+- `data/test.json`
+
+**Kiểm tra:**
+
+```bash
+cd /mnt/q/nckh/COTVD
+python -c "
+import json
+train = json.load(open('data/train.json'))
+valid = json.load(open('data/valid.json'))
+test = json.load(open('data/test.json'))
+print(f'Train: {len(train)} samples')
+print(f'Valid: {len(valid)} samples')
+print(f'Test: {len(test)} samples')
+"
+```
+
+---
+
+### Bước 6: Tạo Prompt Cho LLM (Optional)
+
+#### Cách 6a: Dùng prompt.py (Full Prompt Format)
+
+**Mục đích:** Tạo prompt định dạng cho mô hình LLM (bao gồm code, slice, instructions).
+
+```bash
+cd /mnt/q/nckh/COTVD
+python code/prompt.py
+```
+
+**Output:** `data/cotvd_prompts_slice.txt`
+
+**Format của mỗi prompt:**
+
+```
+<1> code line 1
+<2> code line 2
+...
+<N> code line N
+
+Dependencies:
+<line_num> dependency statement 1
+<line_num> dependency statement 2
+...
+
+label: 0 (hoặc 1)
+```
+
+#### Cách 6b: Dùng get_slice.py (Slice Only)
+
+**Mục đích:** Chỉ trích slice từ training set (ưu tiên positive samples).
+
+```bash
+cd /mnt/q/nckh/COTVD
+python code/get_slice.py
+```
+
+**Output:**
+
+- `data/train_1_slice.txt` - chỉ slice của positive samples
+
+---
+
+### Bước 7: Chạy Baseline Để So Sánh
+
+#### Option 7a: Chạy Devign Baseline
+
+```bash
+cd /mnt/q/nckh/COTVD/baselines/devign-master
+
+# Kiểm tra configs
+cat configs.json
+
+# Tạo CPG từ code
+python main.py -c
+
+# Embedding
+python main.py -e
+
+# Training
+python main.py -p
+```
+
+#### Option 7b: Chạy ReVeal/Vuld_SySe Baseline
+
+```bash
+cd /mnt/q/nckh/COTVD
+
+# Training
+python -c "
+import sys
+sys.path.insert(0, 'baselines/ReVeal-master/Vuld_SySe')
+from attention_main import train_model
+train_model(
+    train_file='data/train.json',
+    model_path='outputs/model_attn.pt',
+    num_epochs=50,
+    cuda_device=-1  # Sử dụng CPU, nếu có GPU thay bằng 0
+)
+"
+```
+
+---
+
+### Bước 8: Đánh Giá Kết Quả
+
+**Mục đích:** Tính Precision, Recall, F1-Score trên test set.
+
+Tạo file `eval.py`:
+
+```python
+import json
+from sklearn.metrics import precision_score, recall_score, f1_score
+
+# Load predictions và labels
+test_data = json.load(open('data/test.json'))
+y_true = [sample['label'] for sample in test_data]
+
+# Giả sử model output predictions
+y_pred = [...] # Predictions từ model
+
+# Tính metrics
+precision = precision_score(y_true, y_pred)
+recall = recall_score(y_true, y_pred)
+f1 = f1_score(y_true, y_pred)
+
+print(f"Precision: {precision:.4f}")
+print(f"Recall: {recall:.4f}")
+print(f"F1-Score: {f1:.4f}")
+```
+
+Chạy:
+
+```bash
+cd /mnt/q/nckh/COTVD
+python eval.py
+```
+
+---
+
+### Tóm Tắt Lệnh Chạy Toàn Bộ Workflow
+
+```bash
+#!/bin/bash
+# Full workflow script
+
+cd /mnt/q/nckh/COTVD
+
+echo "=== Step 1: Merge datasets ==="
+python code/merge.py
+
+echo "=== Step 2: Extract slices with Joern ==="
+# Lưu ý: bước này tốn thời gian
+python code/joern.py
+
+echo "=== Step 3: Remove invalid samples ==="
+python code/rm_no_slice.py
+
+echo "=== Step 4: Split into train/valid/test ==="
+python code/split.py
+
+echo "=== Step 5: Generate prompts (optional) ==="
+python code/prompt.py
+
+echo "=== Step 6: Extract slices for training ==="
+python code/get_slice.py
+
+echo "=== Workflow completed! ==="
+echo "Check data/ folder for generated files"
+ls -lh data/
+```
+
+Lưu script này thành `run_workflow.sh` và chạy:
+
+```bash
+chmod +x run_workflow.sh
+./run_workflow.sh
+```
+
+---
+
+### Ghi Chú Về Đường Dẫn
+
+Tất cả các script đã được cập nhật để:
+
+- Chạy từ thư mục `COTVD` root
+- Tự động xác định thư mục `data` tương đối
+- Không cần phải `cd` vào `data/` trước khi chạy
+
+Ví dụ, bạn có thể chạy từ bất kỳ đâu:
+
+```bash
+cd /mnt/q/nckh/COTVD
+python code/merge.py  # Sẽ tự tìm data/ folder
+```
+
+---

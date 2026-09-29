@@ -45,6 +45,6 @@ def filter_samples_with_functions(json_file, output_file):
     print(f'包含目标函数的样本数量: {len(filtered_samples)}')
 
 # 使用示例
-json_file_path = 'path'
-output_file_path = 'Reveal_non_vul_func.json'
+json_file_path = '../originData/Reveal-vulnerables.json'
+output_file_path = '../local_data/Devign_func.json'
 filter_samples_with_functions(json_file_path, output_file_path)

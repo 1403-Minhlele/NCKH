@@ -104,7 +104,7 @@ def extract_code_and_analyze(json_file, joern_script_path, target_list, out_file
             
 # 设置路径和参数
 # todo json_file 处理过后，带有目标函数切片的会在原json上多一个"slice"键值对，需要新开一个脚本将没有result的样本去掉
-json_file = "Devign_func.json"  # JSON 文件路径
+json_file = "../local_data/Devign_func.json"  # JSON 文件路径
 
 joern_script_path = "COTVD/code/joern.sc"  # joern.sc 脚本路径
 target_list = ["cin","getenv","getenv_s","_wgetenv","_wgetenv_s","catgets","gets","getchar","getc","getch","getche","kbhit","stdin","getdlgtext","getpass","scanf","fscanf","vscanf","vfscanf","istream.get","istream.getline","istream.peek","istream.read*","istream.putback","streambuf.sbumpc","streambuf.sgetc","streambuf.sgetn","streambuf.snextc","streambuf.sputbackc","SendMessage","SendMessageCallback","SendNotifyMessage","PostMessage","PostThreadMessage","recv","recvfrom","Receive","ReceiveFrom","ReceiveFromEx","Socket.Receive*","memcpy","wmemcpy","_memccpy","memmove","wmemmove","memset","wmemset","memcmp","wmemcmp","memchr","wmemchr","strncpy","_strncpy*","Istropyn","_tcsncpy*","_mbsnbcpy*","_wesncpy*","wesncpy","strncat","_strncat*","_mbsncat*","wesncat*","bcopy","strepy","Istropy","wescpy","_tescpy","_mbscpy","CopyMemory","strcat","Istrcat","Istrlen","strchr","strcmp","stroll","strespn","strerror","strlen","strpbrk","strichr","strspn","strstr","strtok","strxfrm","readlink","fgets","sscanf","swscanf","sscanf_s","swscanf_s","printf","vprintf","swprintf","vsprintf","asprintf","vasprintf","fprintf","sprint","sprintf","_sprintf*","_snwprintf*","vsnprintf","CString.Format","CString.FormatV","CString.FormatMessage","CStringT.Format","CStringT.FormatV","CStringT.FormatMessage","CStringT.FormatMessageV","syslog","malloc","Winmain","GetRawInput*","GetComboBoxInfo","GetWindowText","GetKeyNameText","Dde*","GetFileMUI*","GetLocaleInfo*","GetString* GetCursor* ","GetScroll*","GetDIgItem*","GetMenultem*","free","delete","new","malloc","realloc","calloc","_alloca","strdup","asprintf","vsprintf","vasprintf","sprintf","sprintf","_sprintf","_snwprintf","vsnprintf"]  # 目标函数的列表
@@ -113,3 +113,6 @@ log_location = "log_location.txt"
 
 # 从 JSON 文件中提取所有代码块，并执行分析
 extract_code_and_analyze(json_file, joern_script_path, target_list, out_file, log_location)
+
+
+fifter -> giữ lại các dependency slices
