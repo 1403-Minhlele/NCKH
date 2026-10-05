@@ -1,0 +1,386 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "LLM4SZZ: Enhancing SZZ with LLM-based Context Assessment",
+    "output": ".archify/architecture-llm4szz-20261004-180000/llm4szz.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "dataset",
+      "type": "database",
+      "label": "Bug Dataset",
+      "sublabel": "DS_LINUX / DS_APACHE / DS_GITHUB",
+      "pos": [
+        40,
+        310
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "patch_parser",
+      "type": "backend",
+      "label": "Patch Parser",
+      "sublabel": "parse_patch.py",
+      "pos": [
+        310,
+        310
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "tag": "git format-patch"
+    },
+    {
+      "id": "tree_sitter",
+      "type": "backend",
+      "label": "Tree-sitter AST",
+      "sublabel": "function extraction",
+      "pos": [
+        310,
+        140
+      ],
+      "size": [
+        140,
+        64
+      ],
+      "tag": "C / Java"
+    },
+    {
+      "id": "llm_client",
+      "type": "cloud",
+      "label": "LLM Client",
+      "sublabel": "GPT-4o-mini / Llama",
+      "pos": [
+        635,
+        50
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "OpenAI API"
+    },
+    {
+      "id": "root_cause",
+      "type": "backend",
+      "label": "Root Cause Analyzer",
+      "sublabel": "Stage 1: identify root cause",
+      "pos": [
+        560,
+        220
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "criterion",
+      "type": "backend",
+      "label": "Criterion Extractor",
+      "sublabel": "buggy and fixed stmts",
+      "pos": [
+        560,
+        390
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "git_blame",
+      "type": "backend",
+      "label": "Git Blame SZZ",
+      "sublabel": "bug-introducing commit",
+      "pos": [
+        850,
+        390
+      ],
+      "size": [
+        150,
+        64
+      ],
+      "tag": "blame -w"
+    },
+    {
+      "id": "context_assess",
+      "type": "security",
+      "label": "Context Assessment",
+      "sublabel": "Stage 2: LLM determines",
+      "pos": [
+        850,
+        220
+      ],
+      "size": [
+        160,
+        64
+      ],
+      "tag": "yes / no"
+    },
+    {
+      "id": "candidate_rank",
+      "type": "backend",
+      "label": "Candidate Ranker",
+      "sublabel": "sort by commit date",
+      "pos": [
+        850,
+        50
+      ],
+      "size": [
+        150,
+        64
+      ]
+    },
+    {
+      "id": "git_repo",
+      "type": "database",
+      "label": "Git Repositories",
+      "sublabel": "cloned project repos",
+      "pos": [
+        310,
+        510
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "save_logs",
+      "type": "database",
+      "label": "Execution Logs",
+      "sublabel": "save_logs/ JSON",
+      "pos": [
+        1120,
+        310
+      ],
+      "size": [
+        140,
+        64
+      ]
+    },
+    {
+      "id": "statistics",
+      "type": "external",
+      "label": "Statistics Calculator",
+      "sublabel": "precision / recall / F1",
+      "pos": [
+        1120,
+        140
+      ],
+      "size": [
+        160,
+        64
+      ]
+    },
+    {
+      "id": "variants",
+      "type": "external",
+      "label": "RQ2 Variants",
+      "sublabel": "raw / r / re / c / h",
+      "pos": [
+        1120,
+        50
+      ],
+      "size": [
+        140,
+        64
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "LLM4SZZ Pipeline",
+      "wraps": [
+        "patch_parser",
+        "tree_sitter",
+        "root_cause",
+        "criterion",
+        "git_blame",
+        "context_assess",
+        "candidate_rank",
+        "llm_client"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "Stage 1: Root Cause and Criterion",
+      "wraps": [
+        "root_cause",
+        "criterion"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "Stage 2: Context-Enhanced SZZ",
+      "wraps": [
+        "git_blame",
+        "context_assess"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "ds-to-parser",
+      "from": "dataset",
+      "to": "patch_parser",
+      "label": "fix commit hash",
+      "variant": "emphasis"
+    },
+    {
+      "id": "parser-to-ts",
+      "from": "patch_parser",
+      "to": "tree_sitter",
+      "label": "extract AST",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "parser-to-root",
+      "from": "patch_parser",
+      "to": "root_cause",
+      "label": "patch content"
+    },
+    {
+      "id": "repo-to-parser",
+      "from": "git_repo",
+      "to": "patch_parser",
+      "label": "file content",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "root-to-llm",
+      "from": "root_cause",
+      "to": "llm_client",
+      "label": "summarize",
+      "variant": "emphasis",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "root-to-criterion",
+      "from": "root_cause",
+      "to": "criterion",
+      "label": "root cause + file",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "criterion-to-blame",
+      "from": "criterion",
+      "to": "git_blame",
+      "label": "buggy line numbers"
+    },
+    {
+      "id": "blame-to-context",
+      "from": "git_blame",
+      "to": "context_assess",
+      "label": "candidate commits",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelAt": [
+        936,
+        298
+      ]
+    },
+    {
+      "id": "context-to-llm",
+      "from": "context_assess",
+      "to": "llm_client",
+      "label": "buggy?",
+      "variant": "security",
+      "fromSide": "top",
+      "toSide": "right"
+    },
+    {
+      "id": "context-to-rank",
+      "from": "context_assess",
+      "to": "candidate_rank",
+      "label": "verified"
+    },
+    {
+      "id": "blame-to-repo",
+      "from": "git_blame",
+      "to": "git_repo",
+      "label": "git blame",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "right"
+    },
+    {
+      "id": "rank-to-stats",
+      "from": "candidate_rank",
+      "to": "statistics",
+      "label": "final BIC"
+    },
+    {
+      "id": "rank-to-logs",
+      "from": "candidate_rank",
+      "to": "save_logs",
+      "label": "log results",
+      "variant": "dashed",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "id": "stats-to-variants",
+      "from": "statistics",
+      "to": "variants",
+      "label": "compare",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelAt": [
+        1200,
+        128
+      ]
+    },
+    {
+      "id": "logs-to-stats",
+      "from": "save_logs",
+      "to": "statistics",
+      "label": "JSON logs",
+      "fromSide": "top",
+      "toSide": "bottom"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Data Sources",
+      "items": [
+        "DS_LINUX: Linux kernel bug-fix commits",
+        "DS_APACHE: Apache project commits",
+        "DS_GITHUB: Multi-language GitHub commits",
+        "Ground truth: human-verified bug-inducing commits"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Two-Stage Pipeline",
+      "items": [
+        "Stage 1: LLM identifies root cause file, extracts buggy stmts",
+        "Git blame traces buggy stmts to introducing commits",
+        "Stage 2: LLM verifies candidate code snippet contains bug",
+        "Candidate ranker selects most recent verified commit"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Evaluation",
+      "items": [
+        "RQ1: LLM4SZZ vs baseline SZZ variants",
+        "RQ2: Ablation with raw, r, re, c, h variants",
+        "RQ3: GPT-4o-mini vs Llama-3 8B and 70B"
+      ]
+    }
+  ]
+}

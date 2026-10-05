@@ -1,0 +1,408 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "DREA: Decoupled Reasoning and Exploration Agents for Repository-Level Vulnerability Detection",
+    "subtitle": "Decoupled Architecture with High-Capacity Planner, Lightweight Read-Only Explorer & LLM-as-Judge Lucky Hit Evaluation",
+    "output": ".archify/architecture-drea-en-20261004-220500/drea-en.html",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "view_input",
+        "label": "1. Dataset & Local Workspace",
+        "focus": [
+          "dataset_sample",
+          "repo_workspace",
+          "metadata_spec"
+        ],
+        "note": "Phase 1: Ingest 100 RepoPairBench function pairs, local codebase snapshots, and ground-truth CVE/CWE/patch diff specifications."
+      },
+      {
+        "id": "view_runtime",
+        "label": "2. Decoupled Planner & Explorer Loop",
+        "focus": [
+          "planner_agent",
+          "explorer_agent",
+          "virtual_fs"
+        ],
+        "note": "Phase 2: Planner (high-capacity LLM) formulates hypotheses and delegates safe read-only queries to Explorer (lightweight LLM)."
+      },
+      {
+        "id": "view_evidence",
+        "label": "3. Evidence Synthesis & Verdict",
+        "focus": [
+          "virtual_fs",
+          "results_context",
+          "planner_agent",
+          "final_prediction",
+          "model_rationale"
+        ],
+        "note": "Phase 3: Aggregate Caller/Callee context and Taint paths; Planner synthesizes evidence into XML verdict and rationale."
+      },
+      {
+        "id": "view_judge",
+        "label": "4. LLM-as-Judge Evaluation",
+        "focus": [
+          "metadata_spec",
+          "model_rationale",
+          "llm_judge"
+        ],
+        "note": "Phase 4: Independent LLM arbitrator evaluates True Positive rationales against ground-truth CVEs and patch diffs."
+      },
+      {
+        "id": "view_luckyhits",
+        "label": "5. Lucky Hits Diagnosis & Performance",
+        "focus": [
+          "llm_judge",
+          "true_understanding",
+          "lucky_hits",
+          "baselines",
+          "eval_metrics"
+        ],
+        "note": "Phase 5: Separate True Positives into True Understanding vs Lucky Hits (26-55%) and compute Pair-Correctness."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "dataset_sample",
+      "type": "database",
+      "label": "RepoPairBench-100",
+      "sublabel": "100 paired pre/post-fix functions",
+      "pos": [80, 80],
+      "size": [200, 85],
+      "tag": "Paired Benchmark"
+    },
+    {
+      "id": "repo_workspace",
+      "type": "database",
+      "label": "Repository Snapshot",
+      "sublabel": "Local filesystem workspace",
+      "pos": [80, 260],
+      "size": [200, 85],
+      "tag": "Target Repository"
+    },
+    {
+      "id": "metadata_spec",
+      "type": "backend",
+      "label": "Vulnerability & Patch Spec",
+      "sublabel": "CVE, CWE, Diff hunk & commit log",
+      "pos": [80, 440],
+      "size": [200, 80],
+      "tag": "Ground Truth Meta"
+    },
+    {
+      "id": "planner_agent",
+      "type": "security",
+      "label": "Planner Agent (Reasoning)",
+      "sublabel": "High-capacity LLM with write_todos",
+      "pos": [460, 80],
+      "size": [360, 85],
+      "tag": "GPT-4o / Claude 3.5"
+    },
+    {
+      "id": "explorer_agent",
+      "type": "backend",
+      "label": "Explorer Agent (Navigation)",
+      "sublabel": "Lightweight LLM for read-only scan",
+      "pos": [460, 260],
+      "size": [200, 85],
+      "tag": "Read-only Specialist"
+    },
+    {
+      "id": "virtual_fs",
+      "type": "security",
+      "label": "Safe Filesystem Tools",
+      "sublabel": "ls, glob, grep, read_file",
+      "pos": [460, 440],
+      "size": [200, 80],
+      "tag": "Virtual FS Backend"
+    },
+    {
+      "id": "results_context",
+      "type": "backend",
+      "label": "Collected Evidence",
+      "sublabel": "Caller, callee, taint path & sink",
+      "pos": [700, 260],
+      "size": [200, 160],
+      "tag": "Compact Evidence"
+    },
+    {
+      "id": "final_prediction",
+      "type": "security",
+      "label": "Final Prediction",
+      "sublabel": "VULNERABLE / SECURE (XML format)",
+      "pos": [1000, 80],
+      "size": [210, 85],
+      "tag": "Binary Verdict"
+    },
+    {
+      "id": "model_rationale",
+      "type": "backend",
+      "label": "Reasoning Rationale",
+      "sublabel": "Root cause, trigger path & evidence",
+      "pos": [1000, 260],
+      "size": [210, 85],
+      "tag": "Explanatory Rationale"
+    },
+    {
+      "id": "baselines",
+      "type": "external",
+      "label": "Empirical Baselines",
+      "sublabel": "Function-only, whole-file, single-agent",
+      "pos": [1000, 440],
+      "size": [210, 80],
+      "tag": "Comparison Baselines"
+    },
+    {
+      "id": "llm_judge",
+      "type": "cloud",
+      "label": "LLM-as-Judge Evaluator",
+      "sublabel": "Arbitrator comparing rationale vs GT",
+      "pos": [1380, 80],
+      "size": [310, 85],
+      "tag": "True Positives Only"
+    },
+    {
+      "id": "true_understanding",
+      "type": "backend",
+      "label": "True Understanding (TU)",
+      "sublabel": "Valid Mechanism",
+      "pos": [1380, 250],
+      "size": [145, 80],
+      "tag": "Reasoning Accuracy"
+    },
+    {
+      "id": "lucky_hits",
+      "type": "external",
+      "label": "Lucky Hits (LH)",
+      "sublabel": "Flawed Mechanism",
+      "pos": [1545, 250],
+      "size": [145, 80],
+      "tag": "LHR: 26% - 55%"
+    },
+    {
+      "id": "eval_metrics",
+      "type": "database",
+      "label": "Evaluation & Metrics",
+      "sublabel": "Pair-Correctness, Recall, LHR & RA",
+      "pos": [1380, 440],
+      "size": [310, 80],
+      "tag": "RepoPairBench-100"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Benchmark Dataset & Codebase",
+      "wraps": [
+        "dataset_sample",
+        "repo_workspace",
+        "metadata_spec"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "DREA Multi-Agent Runtime",
+      "wraps": [
+        "planner_agent",
+        "explorer_agent",
+        "virtual_fs",
+        "results_context"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "Verdict & Reasoning Rationale",
+      "wraps": [
+        "final_prediction",
+        "model_rationale"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "Reasoning Evaluation (LLM-as-Judge)",
+      "wraps": [
+        "llm_judge",
+        "true_understanding",
+        "lucky_hits",
+        "eval_metrics"
+      ]
+    },
+    {
+      "kind": "region",
+      "label": "Baseline Architectures",
+      "wraps": [
+        "baselines"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "conn_dataset_to_planner",
+      "from": "dataset_sample",
+      "to": "planner_agent",
+      "label": "target function",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "conn_repo_to_explorer",
+      "from": "repo_workspace",
+      "to": "explorer_agent",
+      "label": "source tree snapshot",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "conn_planner_to_explorer",
+      "from": "planner_agent",
+      "to": "explorer_agent",
+      "label": "delegate task",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "conn_explorer_to_fs",
+      "from": "explorer_agent",
+      "to": "virtual_fs",
+      "label": "read-only query",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "conn_fs_to_results",
+      "from": "virtual_fs",
+      "to": "results_context",
+      "label": "code excerpts",
+      "fromSide": "right",
+      "toSide": "bottom"
+    },
+    {
+      "id": "conn_results_to_planner",
+      "from": "results_context",
+      "to": "planner_agent",
+      "label": "update hypotheses",
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "conn_planner_to_pred",
+      "from": "planner_agent",
+      "to": "final_prediction",
+      "label": "model verdict",
+      "variant": "emphasis",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "conn_pred_to_rationale",
+      "from": "final_prediction",
+      "to": "model_rationale",
+      "label": "mechanistic justification",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "conn_rationale_to_judge",
+      "from": "model_rationale",
+      "to": "llm_judge",
+      "label": "reasoning chain (TPs)",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "conn_judge_to_tu",
+      "from": "llm_judge",
+      "to": "true_understanding",
+      "label": "mechanism matches (Accurate)",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "conn_judge_to_lh",
+      "from": "llm_judge",
+      "to": "lucky_hits",
+      "label": "mechanism mismatch (Inaccurate)",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "conn_tu_to_metrics",
+      "from": "true_understanding",
+      "to": "eval_metrics",
+      "label": "compute RA (1 - LHR)",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "conn_lh_to_metrics",
+      "from": "lucky_hits",
+      "to": "eval_metrics",
+      "label": "compute LHR (26-55%)",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "conn_baselines_to_metrics",
+      "from": "baselines",
+      "to": "eval_metrics",
+      "label": "baseline comparison",
+      "variant": "dashed",
+      "fromSide": "right",
+      "toSide": "left"
+    },
+    {
+      "id": "conn_meta_to_judge",
+      "from": "metadata_spec",
+      "to": "llm_judge",
+      "label": "Judge Input Feed (CVE/Diff)",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "1. RepoPairBench & Repository-Level Challenges",
+      "items": [
+        "1.1. Repository-Level Vulnerability Detection requires understanding full project context: inter-procedural callers, callees, configurations, and data flows rather than examining isolated functions.",
+        "1.2. The RepoPairBench-100 benchmark standardizes 100 paired Python functions before and after vulnerability fixes (pre/post-fix), explicitly linked to real CVEs, CWE classes, and commit diffs.",
+        "1.3. Local repository snapshots reconstruct entire project filesystems, enabling autonomous agents to read directory hierarchies and source files without overwhelming context windows.",
+        "1.4. Enforces the strict Pair-Correctness metric: models must correctly classify both the vulnerable pre-fix version (VULNERABLE) and the patched post-fix version (SECURE) for a pair."
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "2. Decoupled Multi-Agent Architecture (DREA)",
+      "items": [
+        "2.1. Clean functional decoupling: The Planner Agent concentrates on high-level security reasoning, while the Explorer Agent specializes strictly in read-only repository navigation.",
+        "2.2. The Planner Agent leverages frontier LLMs (GPT-4o, Claude 3.5 Sonnet) managing hypothesis trees and structured tasks via write_todos (TodoListMiddleware) and Memory Checkpointer.",
+        "2.3. The Explorer Agent runs on lightweight models within a sandboxed Virtual Filesystem strictly limited to safe read-only operations: ls, glob, grep, and read_file.",
+        "2.4. Tight iterative feedback loop: Planner formulates security hypotheses and delegates inspection -> Explorer collects code evidence -> Planner refines beliefs until conclusive proof is reached."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "3. Hypothesis Formulation & Structured Verdicts",
+      "items": [
+        "3.1. Rigorous scientific methodology: A VULNERABLE verdict requires concrete exploitability proof; a SECURE verdict requires verified defensive evidence.",
+        "3.2. Taint & Data-Flow Analysis: Traces Caller hierarchies to find untrusted user-controlled input sources and Callee chains to locate dangerous execution sinks.",
+        "3.3. Trigger Path verification: Confirms whether an external attacker controls critical arguments and whether existing validation filters sufficiently prevent vulnerability triggering.",
+        "3.4. Standardized XML Output: Mandates explicit <security_assessment> tags, detailed <vulnerability> descriptions (CWE, location, root cause), <trigger_path> traces, and supporting <evidence>."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "4. Reasoning Evaluation & The Lucky Hit Phenomenon",
+      "items": [
+        "4.1. Core empirical insight: Standard binary accuracy heavily overestimates LLM capability; 26% to 55% of True Positive predictions are actually Lucky Hits (correct label, flawed rationale).",
+        "4.2. LLM-as-Judge Protocol: An independent evaluator model scrutinizes True Positive reasoning chains against ground-truth CVE descriptions, CWE classifications, and patch diffs.",
+        "4.3. Disentangling True Positives: Categorizes results into True Understanding (TU - genuine grasp of root causes) vs. Lucky Hits (LH - spurious guessing or hallucinated mechanisms).",
+        "4.4. Comparison against 3 Baselines: Function-only (single function), Whole-file (entire source file), and Single-agent (monolithic LLM); DREA achieves superior Pair-Correctness and reasoning fidelity."
+      ]
+    }
+  ]
+}

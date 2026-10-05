@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "b81bd087-e47c-438a-b862-8d41b30d289f",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/home/gyra/archify/.archify/architecture-drea-en-20261004-220500/candidate.json",
+  "output": "/home/gyra/archify/.archify/architecture-drea-en-20261004-220500/drea-en.html",
+  "specification": {
+    "sha256": "828fa87965bc364c88167300ba428865159c9b5317d3dee9c1cfe50b838e2a07",
+    "bytes": 13787
+  },
+  "artifact": {
+    "sha256": "d307663b1b843341bd2912cc96fbcd2e92dea4df9e881f7200ce7b59f0e47f28",
+    "bytes": 787279
+  }
+}

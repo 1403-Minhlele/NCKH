@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "b7eb6dc2-af4f-4dc7-ab79-424a01ffd432",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/home/gyra/archify/.archify/architecture-llm4szz-20261004-180000/candidate.json",
+  "output": "/home/gyra/archify/.archify/architecture-llm4szz-20261004-180000/llm4szz.html",
+  "specification": {
+    "sha256": "a6e965280a77797d89c50d63d22529e39c22e4a579425fa12fd03905036bcce4",
+    "bytes": 7768
+  },
+  "artifact": {
+    "sha256": "b9f238f21aa7a0a494c3ebd51bcca1d28311c3741cd177336533f297e5c0b4df",
+    "bytes": 777813
+  }
+}
